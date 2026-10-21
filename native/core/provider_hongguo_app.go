@@ -15,9 +15,15 @@ import (
 	"time"
 )
 
-const hongguoAppBaseURL = "https://api5-normal-sinfonlineb.fqnovel.com"
+// 版本参数需与红果 App 保持一致，否则网关会返回 HTTP 200 + 空响应体。
+const (
+	hongguoAppVersionCode = "74132"
+	hongguoAppVersionName = "7.4.1.32"
+)
 
-const hongguoAppUserAgent = "com.phoenix.read/73532 (Linux; U; Android 16; zh_CN; 25053RT47C; Build/BP2A.250605.031.A3; Cronet/TTNetVersion:04657795 2026-01-23 QuicVersion:c67e9834 2025-09-08)"
+const hongguoAppBaseURL = "https://api5-normal-sinfonlinea.fqnovel.com"
+
+const hongguoAppUserAgent = "com.phoenix.read/74132 (Linux; U; Android 16; zh_CN; 25053RT47C; Build/BP2A.250605.031.A3; Cronet/TTNetVersion:04657795 2026-01-23 QuicVersion:c67e9834 2025-09-08)"
 
 type hongguoCatalogCursor struct {
 	Offset        int       `json:"offset"`
@@ -132,8 +138,8 @@ func hongguoCatalogHasMore(state *hongguoCatalogState) bool {
 
 func hongguoAppQuery(deviceID, installID string) url.Values {
 	return url.Values{
-		"aid": {"8662"}, "app_name": {"novelread"}, "version_code": {"73532"}, "version_name": {"7.3.5.32"},
-		"manifest_version_code": {"73532"}, "update_version_code": {"73532"}, "channel": {"update_64"},
+		"aid": {"8662"}, "app_name": {"novelread"}, "version_code": {hongguoAppVersionCode}, "version_name": {hongguoAppVersionName},
+		"manifest_version_code": {hongguoAppVersionCode}, "update_version_code": {hongguoAppVersionCode}, "channel": {"update_64"},
 		"device_platform": {"android"}, "os": {"android"}, "ssmix": {"a"}, "device_type": {"25053RT47C"},
 		"device_brand": {"Redmi"}, "language": {"zh"}, "os_api": {"36"}, "os_version": {"16"},
 		"resolution": {"1280*2772"}, "dpi": {"520"}, "ac": {"wifi"}, "device_id": {deviceID}, "iid": {installID},

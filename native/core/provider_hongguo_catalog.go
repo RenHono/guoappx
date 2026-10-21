@@ -16,10 +16,25 @@ var hongguoAppGenres = []struct {
 	key   string
 	scene string
 	name  string
+	// webRoute 是 App 目录接口不可用时回退到网页分类页的路由。
+	webRoute string
 }{
-	{key: "short_play", scene: "default", name: "真人剧"},
-	{key: "comic_series", scene: "comic_series", name: "漫剧"},
-	{key: "ai_series", scene: "ai_series", name: "AI剧"},
+	{key: "short_play", scene: "default", name: "真人剧", webRoute: "real-drama"},
+	{key: "comic_series", scene: "comic_series", name: "漫剧", webRoute: "comic-drama"},
+	{key: "ai_series", scene: "ai_series", name: "AI剧", webRoute: "ai-drama"},
+}
+
+// hongguoWebRouteForGenre 返回该分类对应的网页回退路由。
+func hongguoWebRouteForGenre(category string) (string, bool) {
+	if category == "" {
+		return "", false
+	}
+	for _, genre := range hongguoAppGenres {
+		if genre.key == category {
+			return genre.webRoute, true
+		}
+	}
+	return "", false
 }
 
 type libraryMoreKey struct{}

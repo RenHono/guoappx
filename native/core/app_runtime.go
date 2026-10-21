@@ -637,9 +637,20 @@ func (engine *nativeEngine) nativeCatalog(ctx context.Context, input nativeInput
 		if category != "" && state != nil {
 			result.HasMore = !state.Feeds["category:"+category].Exhausted
 		}
-		if len(items) == 0 && err != nil && ctx.Err() == nil && (category == "" || category == "short_play") {
+		// App 目录接口已下线（恒返回 200 + 空体），任一分类都要能回退到网页分类页。
+		// 未选分类时走 real-drama，选中分类时用该分类对应的路由。
+		if len(items) == 0 && err != nil && ctx.Err() == nil {
+			route, genreName := "real-drama", "真人剧"
+			if webRoute, ok := hongguoWebRouteForGenre(category); ok {
+				for _, genre := range hongguoAppGenres {
+					if genre.key == category {
+						genreName = genre.name
+					}
+				}
+				route = webRoute
+			}
 			var totalPages int
-			items, totalPages, err = d.fetchHongguoCategoryPage(ctx, "real-drama?page="+strconv.Itoa(page), "真人剧")
+			items, totalPages, err = d.fetchHongguoCategoryPage(ctx, route+"?page="+strconv.Itoa(page), genreName)
 			result.HasMore = page < totalPages
 		}
 	case sourceHuangdou:

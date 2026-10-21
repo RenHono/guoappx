@@ -12,21 +12,33 @@ import (
 	"time"
 )
 
+const (
+	// 单数版 /novel/player/video_model/v1/ 已被网关下线：恒定返回 HTTP 200 + 空响应体，
+	// 与签名是否正确无关。现行接口是 multi_video_model，且 video_platform 必须是 1024。
+	hongguoAppMediaPath     = "/novel/player/multi_video_model/v1/"
+	hongguoAppVideoPlatform = 1024
+)
+
 func (downloader *Downloader) resolveHongguoAppMedia(ctx context.Context, videoID string) (providerMedia, error) {
 	if !hongguoNumericID.MatchString(videoID) {
 		return providerMedia{}, errors.New("红果视频 ID 无效")
 	}
 	payload := map[string]any{
 		"video_id": videoID, "content_type": 1,
-		"biz_param": map[string]any{"need_all_video_definition": true, "video_platform": 3},
+		"biz_param": map[string]any{"need_all_video_definition": true, "video_platform": hongguoAppVideoPlatform},
 	}
-	result, err := downloader.hongguoAppRequest(ctx, http.MethodPost, "/novel/player/video_model/v1/", nil, payload)
+	result, err := downloader.hongguoAppRequest(ctx, http.MethodPost, hongguoAppMediaPath, nil, payload)
 	if err != nil {
 		return providerMedia{}, err
 	}
 	data := nestedMap(result, "data")
-	model, _ := data["video_model"].(map[string]any)
-	if encoded, ok := data["video_model"].(string); ok && encoded != "" {
+	// 新接口把结果按 video_id 挂在 data 下，video_model 是内嵌的 JSON 字符串。
+	entry := nestedMap(data, videoID)
+	if len(entry) == 0 {
+		entry = data
+	}
+	model, _ := entry["video_model"].(map[string]any)
+	if encoded, ok := entry["video_model"].(string); ok && encoded != "" {
 		if decoded, err := decodeHongguoBase64(encoded); err == nil && len(decoded) > 0 {
 			encoded = string(decoded)
 		}
@@ -37,11 +49,14 @@ func (downloader *Downloader) resolveHongguoAppMedia(ctx context.Context, videoI
 		}
 	}
 	if len(model) == 0 {
-		if rows := anyList(data["video_list"]); len(rows) > 0 {
-			model = map[string]any{
-				"video_list":     data["video_list"],
-				"video_duration": data["video_duration"],
-				"duration":       data["duration"],
+		for _, scope := range []map[string]any{entry, data} {
+			if rows := anyList(scope["video_list"]); len(rows) > 0 {
+				model = map[string]any{
+					"video_list":     scope["video_list"],
+					"video_duration": scope["video_duration"],
+					"duration":       scope["duration"],
+				}
+				break
 			}
 		}
 	}
