@@ -31,6 +31,7 @@ const (
 	sourceSorani        = "sorani"
 	sourceGuipian       = "guipian"
 	sourceHanxiaoquan   = "hanxiaoquan"
+	sourceMrds          = "mrds"
 
 	providerMaxBodyBytes = 20 * 1024 * 1024
 	providerTimeout      = 12 * time.Second
@@ -91,7 +92,7 @@ func splitProviderDramaID(id string) (source, sourceID string, ok bool) {
 
 func isHuangguoProviderSource(source string) bool {
 	switch canonicalProviderSource(source) {
-	case sourceHuangguoAI, sourceHuangguoVideo, sourceHuangdou, sourceHongguo, sourceHuangju, sourceYeguo, sourceDSD, sourceCloudFront, sourceSorani, sourceGuipian, sourceHanxiaoquan:
+	case sourceHuangguoAI, sourceHuangguoVideo, sourceHuangdou, sourceHongguo, sourceHuangju, sourceYeguo, sourceDSD, sourceCloudFront, sourceSorani, sourceGuipian, sourceHanxiaoquan, sourceMrds:
 		return true
 	default:
 		return false
@@ -122,6 +123,8 @@ func canonicalProviderSource(source string) string {
 		return sourceGuipian
 	case "hanxiaoquan", "jennyhow.com", "www.jennyhow.com":
 		return sourceHanxiaoquan
+	case "mrds", "mrds66.com", "www.mrds66.com":
+		return sourceMrds
 	default:
 		return strings.TrimSpace(source)
 	}

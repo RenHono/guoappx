@@ -14,7 +14,8 @@ class SourceSite {
       id == 'dsd' ||
       id == 'sorani' ||
       id == 'guipian' ||
-      id == 'hanxiaoquan';
+      id == 'hanxiaoquan' ||
+      id == 'mrds';
   bool get searchSuggestions => id == 'hongguo';
   String get groupId => switch (id) {
     'huangguo-video' || 'huangguoai' || 'cloudfront' => 'huangguo',
@@ -37,6 +38,7 @@ class SourceSite {
     '韩小圈',
     '韩剧 · 韩国电影 · 综艺动漫',
   );
+  static const mrds = SourceSite('mrds', '每日大赛', '短剧 · 动漫 · 热门话题');
 
   /// 默认开启的站源：红果、韩小圈、鬼片网、青空次元。
   static const primaryValues = [hongguo, hanxiaoquan, guipian, sorani];
@@ -50,6 +52,7 @@ class SourceSite {
     SourceSite('huangguo-video', '黄果视频', '视频剧集'),
     SourceSite('huangguoai', '黄果 AI', 'AI 短剧'),
     SourceSite('cloudfront', '黄果旧版', '旧 API 剧库'),
+    mrds,
   ];
   static const knownValues = [...primaryValues, ...restrictedValues];
   static const allValues = [...primaryValues, ...restrictedValues];

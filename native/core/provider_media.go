@@ -45,6 +45,8 @@ func (d *Downloader) providerBaseURL(source string) string {
 		configured, fallback = d.cfg.GuipianURL, guipianSiteBaseURL
 	case sourceHanxiaoquan:
 		configured, fallback = d.cfg.HanxiaoquanURL, hanxiaoquanSiteBaseURL
+	case sourceMrds:
+		fallback = mrdsSiteBaseURL
 	default:
 		fallback = "https://d2pypzndaqisk.cloudfront.net"
 	}
@@ -81,6 +83,11 @@ func providerSourceForURL(raw string) string {
 		return sourceGuipian
 	case host == "jennyhow.com" || host == "www.jennyhow.com":
 		return sourceHanxiaoquan
+	case host == "mrds66.com" || host == "www.mrds66.com":
+		return sourceMrds
+	// 每日大赛的 HLS 走独立 CDN，媒体地址反查要认得回来源。
+	case host == "hls.tpbbwcc.cn" || host == "tx.doudou520.online" || strings.HasSuffix(host, ".tpbbwcc.cn") || strings.HasSuffix(host, ".doudou520.online"):
+		return sourceMrds
 	default:
 		return ""
 	}
@@ -141,6 +148,9 @@ func (d *Downloader) resolveProviderMedia(ctx context.Context, task Task) (provi
 	}
 	if chapter.Source == sourceHanxiaoquan {
 		return d.resolveHanxiaoquanMedia(ctx, task)
+	}
+	if chapter.Source == sourceMrds {
+		return d.resolveMrdsMedia(ctx, task)
 	}
 	if strings.HasPrefix(chapter.VideoURL, "hongguo-cenc://") {
 		return d.resolveHongguoMedia(ctx, task)
