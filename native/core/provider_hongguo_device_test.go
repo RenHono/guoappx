@@ -36,40 +36,38 @@ func hongguoDeviceFixture(t *testing.T, rejected map[string]bool, registerFails 
 	return d, &requests
 }
 
-func TestHongguoSignedRequestRegistersDeviceFirst(t *testing.T) {
+func TestHongguoSignedRequestKeepsCurrentDevice(t *testing.T) {
 	d, requests := hongguoDeviceFixture(t, nil, false)
 	if _, err := d.hongguoAppRequest(context.Background(), http.MethodPost, "/novel/player/video_detail/v1/", nil, map[string]any{}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := d.hongguoAppRequest(context.Background(), http.MethodGet, hongguoBookmallTabPath, nil, nil); err != nil {
-		t.Fatal(err)
+	if state := d.hongguoCatalogSnapshot(); state.DeviceID != "7" || state.Registered {
+		t.Fatal("signed request changed the device", state)
 	}
-	state := d.hongguoCatalogSnapshot()
-	if !state.Registered || state.DeviceID != "1001" || state.InstallID != "10019" {
-		t.Fatal("registered device was not kept", state)
-	}
-	if got := *requests; len(got) != 3 || got[0] != "register" || got[1] != "detail@1001" || got[2] != "detail@1001" {
+	if got := *requests; len(got) != 1 || got[0] != "detail@7" {
 		t.Fatal("unexpected request sequence", got)
 	}
 }
 
-func TestHongguoRejectedDeviceIsReplacedAndRetried(t *testing.T) {
-	d, requests := hongguoDeviceFixture(t, map[string]bool{"1001": true, "1002": true}, false)
-	if _, err := d.hongguoAppRequest(context.Background(), http.MethodPost, "/novel/player/video_detail/v1/", nil, map[string]any{}); err != nil {
+func TestHongguoDeviceRegistrationReplacesDevice(t *testing.T) {
+	d, requests := hongguoDeviceFixture(t, nil, false)
+	if err := d.ensureHongguoDevice(context.Background(), ""); err != nil {
 		t.Fatal(err)
 	}
-	if state := d.hongguoCatalogSnapshot(); state.DeviceID != "1003" || !state.Registered {
+	if err := d.ensureHongguoDevice(context.Background(), ""); err != nil {
+		t.Fatal(err)
+	}
+	if state := d.hongguoCatalogSnapshot(); !state.Registered || state.DeviceID != "1001" || state.InstallID != "10019" {
+		t.Fatal("registered device was not kept", state)
+	}
+	if err := d.ensureHongguoDevice(context.Background(), "1001"); err != nil {
+		t.Fatal(err)
+	}
+	if state := d.hongguoCatalogSnapshot(); state.DeviceID != "1002" {
 		t.Fatal("rejected device was not replaced", state)
 	}
-	want := []string{"register", "detail@1001", "register", "detail@1002", "register", "detail@1003"}
-	if got := *requests; len(got) != len(want) {
+	if got := *requests; len(got) != 2 || got[0] != "register" || got[1] != "register" {
 		t.Fatal("unexpected request sequence", got)
-	} else {
-		for index := range want {
-			if got[index] != want[index] {
-				t.Fatal("unexpected request sequence", got)
-			}
-		}
 	}
 }
 
@@ -90,14 +88,14 @@ func TestHongguoTabRejectionKeepsDevice(t *testing.T) {
 func TestHongguoRegisterFailurePausesAndKeepsOldDevice(t *testing.T) {
 	d, requests := hongguoDeviceFixture(t, nil, true)
 	for range 2 {
-		if _, err := d.hongguoAppRequest(context.Background(), http.MethodPost, "/novel/player/video_detail/v1/", nil, map[string]any{}); err != nil {
-			t.Fatal(err)
+		if err := d.ensureHongguoDevice(context.Background(), ""); err == nil {
+			t.Fatal("failed registration reported success")
 		}
 	}
 	if state := d.hongguoCatalogSnapshot(); state.DeviceID != "7" || state.Registered {
 		t.Fatal("failed registration changed the device", state)
 	}
-	if got := *requests; len(got) != 3 || got[0] != "register" || got[1] != "detail@7" || got[2] != "detail@7" {
+	if got := *requests; len(got) != 1 || got[0] != "register" {
 		t.Fatal("registration was not paused after failure", got)
 	}
 }
